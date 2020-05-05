@@ -78,6 +78,8 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     "store_management.users.apps.UsersConfig",
+    "store_management.products.apps.ProductsConfig",
+    "store_management.shifts.apps.ShiftsConfig",
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -242,7 +244,7 @@ LOGGING = {
     "formatters": {
         "verbose": {
             "format": "%(levelname)s %(asctime)s %(module)s "
-            "%(process)d %(thread)d %(message)s"
+                      "%(process)d %(thread)d %(message)s"
         }
     },
     "handlers": {
