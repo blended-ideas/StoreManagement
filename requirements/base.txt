@@ -9,7 +9,7 @@ django-celery-beat==2.0.0  # https://github.com/celery/django-celery-beat
 
 # Django
 # ------------------------------------------------------------------------------
-django==3.0.5  # pyup: < 3.1  # https://www.djangoproject.com/
+django==3.0.6  # pyup: < 3.1  # https://www.djangoproject.com/
 django-environ==0.4.5  # https://github.com/joke2k/django-environ
 django-model-utils==4.0.0  # https://github.com/jazzband/django-model-utils
 django-allauth==0.41.0  # https://github.com/pennersr/django-allauth
@@ -17,3 +17,4 @@ django-crispy-forms==1.9.0  # https://github.com/django-crispy-forms/django-cris
 django-redis==4.11.0  # https://github.com/jazzband/django-redis
 # Django REST Framework
 djangorestframework==3.11.0  # https://github.com/encode/django-rest-framework
+djangorestframework-simplejwt==4.4.0  # https://github.com/SimpleJWT/django-rest-framework-simplejwt
