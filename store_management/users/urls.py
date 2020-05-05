@@ -1,14 +1,13 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 
-from store_management.users.views import (
-    user_detail_view,
-    user_redirect_view,
-    user_update_view,
-)
+from store_management.users.views import UserViewSet
 
 app_name = "users"
+
+router = DefaultRouter()
+router.register('user', UserViewSet)
+
 urlpatterns = [
-    path("~redirect/", view=user_redirect_view, name="redirect"),
-    path("~update/", view=user_update_view, name="update"),
-    path("<str:username>/", view=user_detail_view, name="detail"),
+    path('', include(router.urls)),
 ]
