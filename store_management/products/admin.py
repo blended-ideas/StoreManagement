@@ -6,7 +6,7 @@ from store_management.products.models import Product, ProductExpiry
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'username')
+    list_display = ('name', 'price')
     readonly_fields = ('created_by',)
 
 

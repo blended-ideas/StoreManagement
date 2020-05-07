@@ -1,13 +1,31 @@
 from rest_framework import serializers
 
-from store_management.users.models import User
+from .models import User, UserRole
+
+
+class UserRoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserRole
+        fields = '__all__'
 
 
 class UserSerializer(serializers.ModelSerializer):
+    roles = UserRoleSerializer(required=False, read_only=True, many=True)
+
     class Meta:
         model = User
-        fields = ["username", "email", "name", "url"]
+        fields = ["username", "email", "name", "roles"]
 
-        extra_kwargs = {
-            "url": {"view_name": "api:user-detail", "lookup_field": "username"}
-        }
+
+class ChangePasswordSerializer(serializers.Serializer):
+    def create(self, validated_data):
+        pass
+
+    def update(self, instance, validated_data):
+        pass
+
+    old_password = serializers.CharField()
+    new_password = serializers.CharField(min_length=6)
+
+    class Meta:
+        fields = ['new_password', 'old_password']
