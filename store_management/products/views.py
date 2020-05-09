@@ -24,4 +24,4 @@ class ProductViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin, ListMod
     def perform_create(self, serializer):
         product = serializer.save()
         ProductStockChange.objects.create(user=self.request.user, product=product, value=product.stock,
-                                          changeType='INITIAL')
+                                          changeType='INITIAL_STOCK')

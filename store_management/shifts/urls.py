@@ -1,12 +1,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from .views import UserViewSet
+from .views import ShiftDetailViewSet
 
-app_name = "users"
+app_name = "shifts"
 
 router = DefaultRouter()
-router.register('user', UserViewSet)
+router.register('detail', ShiftDetailViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

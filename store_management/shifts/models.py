@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.db.models import ForeignKey, PROTECT, DateTimeField, CASCADE, PositiveIntegerField
+from django.db.models import ForeignKey, PROTECT, DateTimeField
 from model_utils.models import UUIDModel
 
 from store_management.products.models import Product
@@ -14,12 +14,5 @@ class ShiftDetail(UUIDModel):
         verbose_name = 'Shift Detail'
         verbose_name_plural = 'Shift Details'
 
-
-class ShiftProduct(UUIDModel):
-    product = ForeignKey(Product, on_delete=PROTECT)
-    shift = ForeignKey(ShiftDetail, on_delete=CASCADE)
-    quantity = PositiveIntegerField()
-
-    class Meta:
-        verbose_name = 'Shift Product'
-        verbose_name_plural = 'Shift Products'
+    def __str__(self):
+        return f"{self.user} - {self.start_dt}"
