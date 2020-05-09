@@ -16,6 +16,7 @@ class ProductViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin, ListMod
     permission_classes = [ProductPermission]
     filter_backends = (SearchFilter, OrderingFilter)
     search_fields = ('name', 'category', 'barcode_entry')
+    ordering = ['name']
 
     def get_queryset(self):
         return self.queryset
