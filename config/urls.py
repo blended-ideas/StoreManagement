@@ -26,6 +26,7 @@ urlpatterns += [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     path("api/users/", include("store_management.users.urls", namespace="users")),
+    path("api/products/", include("store_management.products.urls", namespace="product")),
 ]
 
 if settings.DEBUG:

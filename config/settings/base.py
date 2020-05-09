@@ -74,7 +74,8 @@ THIRD_PARTY_APPS = [
     "allauth.socialaccount",
     "django_celery_beat",
     "rest_framework",
-    "corsheaders"
+    "corsheaders",
+    "django_cleanup.apps.CleanupConfig"
 ]
 
 LOCAL_APPS = [
