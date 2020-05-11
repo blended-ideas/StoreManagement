@@ -59,11 +59,3 @@ class ShiftEntry(UUIDModel):
 
     def __str__(self):
         return f"{self.product.name} - {self.quantity}"
-
-    def save(self, *args, **kwargs):
-        print(self.pk, self.id, self.product.distributor_margin, self.product.retailer_margin, self.product.distributor_margin)
-        # if self.pk is None:
-        self.distributor_margin = self.product.distributor_margin
-        self.retailer_margin = self.product.retailer_margin
-        self.price = self.product.price
-        return super(ShiftEntry, self).save(*args, **kwargs)
