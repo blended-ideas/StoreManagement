@@ -14,12 +14,13 @@ class Product(UUIDModel):
     name = CharField(max_length=250)
     category = CharField(max_length=500, blank=True, null=True)
 
-    price = DecimalField(max_digits=10, decimal_places=2)
-    distributor_margin = DecimalField(max_digits=10, decimal_places=2)
-    retailer_margin = DecimalField(max_digits=10, decimal_places=2)
+    landing_price = DecimalField(max_digits=9, decimal_places=2)
+    price = DecimalField(max_digits=9, decimal_places=2, verbose_name='MRP')
+    distributor_margin = DecimalField(max_digits=5, decimal_places=2, verbose_name='Shell Margin')
+    retailer_margin = DecimalField(max_digits=5, decimal_places=2)
 
     stock = PositiveIntegerField()
-    barcode_entry = CharField(max_length=200)
+    barcode_entry = CharField(max_length=200, unique=True)
     image = ImageField(upload_to=get_product_upload_path, blank=True, null=True)
 
     is_active = BooleanField(default=True)
@@ -49,7 +50,7 @@ class ProductStockChange(TimeStampedModel):
     product = ForeignKey(Product, on_delete=CASCADE)
     value = IntegerField()
     changeType = CharField(choices=PRODUCT_STATUS_CHANGE_CHOICES, max_length=50)
-    shift = ForeignKey('shifts.ShiftDetail', on_delete=CASCADE, blank=True, null=True, related_name='entries')
+    shift_entry = ForeignKey('shifts.ShiftEntry', on_delete=CASCADE, blank=True, null=True, related_name='entries')
 
     class Meta:
         verbose_name = 'Product Stock Change'
@@ -59,6 +60,6 @@ class ProductStockChange(TimeStampedModel):
         return f"{self.user} - {self.changeType} - {self.value}"
 
     def save(self, *args, **kwargs):
-        if self.changeType == 'SHIFT' and self.shift is None:
+        if self.changeType == 'SHIFT' and self.shift_entry is None:
             raise ValidationError('Missing Shift Entry')
         super(ProductStockChange, self).save(*args, **kwargs)

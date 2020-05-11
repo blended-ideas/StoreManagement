@@ -20,4 +20,4 @@ class ProductAdmin(admin.ModelAdmin):
 class ProductStockChangeAdmin(admin.ModelAdmin):
     list_display = ('user', 'product', 'changeType', 'value')
     list_filter = ('changeType',)
-    readonly_fields = ('user', 'product', 'shift')
+    readonly_fields = ('user', 'product', 'shift_entry')
