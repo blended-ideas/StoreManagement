@@ -1,22 +1,48 @@
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, UpdateModelMixin
+from rest_framework.mixins import UpdateModelMixin, ListModelMixin, RetrieveModelMixin, CreateModelMixin
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
-from .serializers import UserSerializer, ChangePasswordSerializer
+from .models import UserRole
+from .serializers import UserSerializer, ChangePasswordSerializer, UserRoleSerializer
 
 User = get_user_model()
 
 
-class UserViewSet(RetrieveModelMixin, ListModelMixin, UpdateModelMixin, GenericViewSet):
+class UserViewSet(GenericViewSet, RetrieveModelMixin, ListModelMixin, UpdateModelMixin, CreateModelMixin):
     serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
     queryset = User.objects.all()
-    lookup_field = "username"
 
     def get_queryset(self, *args, **kwargs):
-        return self.queryset.filter(id=self.request.user.id)
+        if self.request.user.roles.filter(label='admin').count() >= 1:
+            queryset = self.queryset.filter(roles__label__in=['auditor', 'shiftworker'])
+        else:
+            queryset = self.queryset.filter(id=self.request.user.id)
+        return queryset.distinct()
+
+    def perform_update(self, serializer):
+        user = serializer.save()
+        roles = self.request.data.get('roles_change', [])
+        roles_add = UserRole.objects.filter(label__in=[k for k in roles if roles[k]])
+        roles_remove = UserRole.objects.filter(label__in=[k for k in roles if not roles[k]])
+        user.roles.add(*roles_add)
+        user.roles.remove(*roles_remove)
+
+    def perform_create(self, serializer):
+        user = serializer.save()
+        password = self.request.data.get('password', [])
+        user.set_password(password)
+        user.save()
+
+        roles = self.request.data.get('roles_change', [])
+        roles_add = UserRole.objects.filter(label__in=[k for k in roles if roles[k]])
+        roles_remove = UserRole.objects.filter(label__in=[k for k in roles if not roles[k]])
+        user.roles.add(*roles_add)
+        user.roles.remove(*roles_remove)
 
     @action(detail=False, methods=["GET"])
     def me(self, request):
@@ -37,3 +63,8 @@ class UserViewSet(RetrieveModelMixin, ListModelMixin, UpdateModelMixin, GenericV
         user.set_password(new_password)
         user.save()
         return Response(data={'success': 'Password Changed'}, status=status.HTTP_200_OK)
+
+
+class UserRoleViewSet(ModelViewSet):
+    serializer_class = UserRoleSerializer
+    queryset = UserRole.objects.all()
