@@ -26,6 +26,7 @@ urlpatterns += [
     path("api/users/", include("store_management.users.urls", namespace="users")),
     path("api/products/", include("store_management.products.urls", namespace="product")),
     path("api/shifts/", include("store_management.shifts.urls", namespace="shifts")),
+    path("api/reports/", include("store_management.report.urls", namespace="report")),
 ]
 
 if settings.DEBUG:

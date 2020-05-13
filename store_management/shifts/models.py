@@ -46,7 +46,7 @@ class ShiftDetail(UUIDModel):
 
 class ShiftEntry(UUIDModel):
     shift = ForeignKey(ShiftDetail, on_delete=CASCADE, related_name='entries')
-    product = ForeignKey(Product, on_delete=PROTECT)
+    product = ForeignKey(Product, on_delete=PROTECT, related_name='shift_entries')
 
     quantity = PositiveIntegerField()
     distributor_margin = DecimalField(max_digits=5, decimal_places=2, default=Decimal(0), verbose_name='Shell Margin')
