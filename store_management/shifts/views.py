@@ -1,4 +1,7 @@
 # Create your views here.
+from datetime import timedelta, datetime
+
+import dateutil
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin
 from rest_framework.viewsets import GenericViewSet
@@ -21,6 +24,13 @@ class ShiftDetailViewSet(GenericViewSet, CreateModelMixin, ListModelMixin, Retri
 
     def get_queryset(self):
         queryset = self.queryset
+        date = self.request.query_params.get('date', None)
+
+        if date is not None:
+            day_start = dateutil.parser.isoparse(date)
+            day_end = day_start + timedelta(days=1)
+            queryset = queryset.filter(end_dt__range=(day_start, day_end))
+
         if self.request.user.roles.filter(label__in=['auditor', 'admin']).count() == 0:
             queryset = queryset.filter(user=self.request.user)
         return queryset
