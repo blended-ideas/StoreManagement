@@ -2,16 +2,12 @@ from datetime import timedelta
 
 import dateutil.parser
 # Create your views here.
-from django.db.models import F
 from django.db.models.aggregates import Sum
-from django.db.models.fields import DecimalField
 from django.db.models.functions import Coalesce
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from store_management.products.models import Product
-from store_management.products.serializers import ProductSerializerForMargin
 from store_management.shifts.models import ShiftDetail
 
 
@@ -23,24 +19,34 @@ class DailyMargin(APIView):
 
         day_start = dateutil.parser.isoparse(date)
         day_end = day_start + timedelta(days=1)
-
-        margin_data = ShiftDetail.objects.filter(end_dt__range=(day_start, day_end)) \
+        daily_margin = ShiftDetail.objects.filter(end_dt__range=(day_start, day_end)) \
             .aggregate(price_total=Coalesce(Sum('price_total'), 0),
                        distributor_margin_total=Coalesce(Sum('distributor_margin_total'), 0),
                        retailer_margin_total=Coalesce(Sum('retailer_margin_total'), 0))
-        top_selling = Product.objects.filter(shift_entries__shift__end_dt__range=(day_start, day_end)) \
-            .annotate(high_margin=Sum(F('shift_entries__retailer_margin') * F('shift_entries__quantity'),
-                                      output_field=DecimalField())) \
-            .annotate(high_count=Sum('shift_entries__quantity')) \
-            .distinct()
 
-        high_margin_product = top_selling.order_by('high_margin').last()
-        high_count_product = top_selling.order_by('high_count').last()
+        week_start = day_end - timedelta((day_end.weekday() - 6) % 7)
+        week_end = week_start + timedelta(days=6)
+
+        weekly_margin = ShiftDetail.objects.filter(end_dt__range=(week_start, week_end)) \
+            .aggregate(price_total=Coalesce(Sum('price_total'), 0),
+                       distributor_margin_total=Coalesce(Sum('distributor_margin_total'), 0),
+                       retailer_margin_total=Coalesce(Sum('retailer_margin_total'), 0))
+
+        monthly_margin = ShiftDetail.objects.filter(end_dt__month=day_end.month) \
+            .aggregate(price_total=Coalesce(Sum('price_total'), 0),
+                       distributor_margin_total=Coalesce(Sum('distributor_margin_total'), 0),
+                       retailer_margin_total=Coalesce(Sum('retailer_margin_total'), 0))
+
+        quarterly_margin = ShiftDetail.objects.filter(end_dt__quarter=((day_end.month - 1) // 3 + 1)) \
+            .aggregate(price_total=Coalesce(Sum('price_total'), 0),
+                       distributor_margin_total=Coalesce(Sum('distributor_margin_total'), 0),
+                       retailer_margin_total=Coalesce(Sum('retailer_margin_total'), 0))
 
         response_data = {
-            'margin': margin_data,
-            'high_margin_product': ProductSerializerForMargin(high_margin_product).data,
-            'high_count_product': ProductSerializerForMargin(high_count_product).data
+            'daily_margin': daily_margin,
+            'weekly_margin': weekly_margin,
+            'monthly_margin': monthly_margin,
+            'quarterly_margin': quarterly_margin
         }
 
         return Response(data=response_data, status=status.HTTP_200_OK)

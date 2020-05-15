@@ -1,7 +1,8 @@
 from decimal import Decimal
 
 from django.conf import settings
-from django.db.models import ForeignKey, PROTECT, DateTimeField, F, DecimalField, PositiveIntegerField, CASCADE
+from django.db.models import ForeignKey, PROTECT, DateTimeField, F, DecimalField, PositiveIntegerField, CASCADE, \
+    BooleanField
 from django.db.models.aggregates import Sum
 from model_utils.models import UUIDModel
 
@@ -9,13 +10,17 @@ from store_management.products.models import Product
 
 
 class ShiftDetail(UUIDModel):
-    user = ForeignKey(settings.AUTH_USER_MODEL, on_delete=PROTECT)
+    user = ForeignKey(settings.AUTH_USER_MODEL, on_delete=PROTECT, related_name='shifts')
     start_dt = DateTimeField(verbose_name='Start Date/Time')
     end_dt = DateTimeField(verbose_name='End Date/Time')
 
     price_total = DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     distributor_margin_total = DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     retailer_margin_total = DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+
+    approved = BooleanField(default=False)
+    approved_by = ForeignKey(settings.AUTH_USER_MODEL, on_delete=PROTECT, blank=True, null=True,
+                             related_name='approved_shifts')
 
     class Meta:
         verbose_name = 'Shift Detail'
