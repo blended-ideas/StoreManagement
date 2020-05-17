@@ -61,6 +61,7 @@ class ShiftEntry(UUIDModel):
     class Meta:
         verbose_name = 'Shift Entry'
         verbose_name_plural = 'Shift Entry'
+        unique_together = ('shift', 'product')
 
     def __str__(self):
         return f"{self.product.name} - {self.quantity}"
