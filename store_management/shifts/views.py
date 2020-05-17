@@ -1,13 +1,16 @@
 # Create your views here.
-from datetime import timedelta, datetime
+from datetime import timedelta
 
 import dateutil
+from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin
+from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from .models import ShiftDetail
-from .permissions import ShiftDetailPermission
+from .permissions import ShiftDetailPermission, ShiftApprovePermission
 from .serializers import ShiftDetailSerializer
 from .utils import create_shift_entries_from_data
 from ..utils.common_utils import StandardResultsSetPagination
@@ -40,3 +43,13 @@ class ShiftDetailViewSet(GenericViewSet, CreateModelMixin, ListModelMixin, Retri
         shift_detail = serializer.save()
         create_shift_entries_from_data(shift_detail, entries)
         shift_detail.save()
+
+    @action(methods=['patch'], detail=True, permission_classes=[ShiftApprovePermission])
+    def approve(self, request, pk=None):
+        shift = self.get_object()
+        if shift.approved:
+            return Response(self.get_serializer(shift).data, status=status.HTTP_200_OK)
+        shift.approved = True
+        shift.approved_by = self.request.user
+        shift.save()
+        return Response(self.get_serializer(shift).data, status=status.HTTP_200_OK)

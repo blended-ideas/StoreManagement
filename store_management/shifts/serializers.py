@@ -15,6 +15,7 @@ class ShiftEntrySerializer(ModelSerializer):
 class ShiftDetailSerializer(ModelSerializer):
     entries = ShiftEntrySerializer(many=True, required=False, read_only=True)
     user_name = SlugRelatedField(source='user', slug_field='name', required=False, read_only=True)
+    approved_by_name = SlugRelatedField(source='approved_by', slug_field='name', required=False, read_only=True)
 
     class Meta:
         model = ShiftDetail
