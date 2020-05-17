@@ -12,7 +12,7 @@ from rest_framework.viewsets import GenericViewSet
 from .models import ShiftDetail
 from .permissions import ShiftDetailPermission, ShiftApprovePermission
 from .serializers import ShiftDetailSerializer
-from .utils import create_shift_entries_from_data
+from .utils import create_shift_entries_from_data, update_shift_entry
 from ..utils.common_utils import StandardResultsSetPagination
 
 
@@ -42,6 +42,19 @@ class ShiftDetailViewSet(GenericViewSet, CreateModelMixin, ListModelMixin, Retri
         entries = self.request.data.get('entries', [])
         shift_detail = serializer.save()
         create_shift_entries_from_data(shift_detail, entries)
+        shift_detail.save()
+
+    def perform_update(self, serializer):
+        shift_detail = serializer.save()
+        entries = self.request.data.get('entries', [])
+        lines_update = list(filter(lambda x: x['condition'] == 'EDIT', entries))
+        lines_create = list(filter(lambda x: x['condition'] == 'NEW', entries))
+
+        # print('CREATE', lines_create)
+        print('UPDATE', lines_update)
+        for line in lines_update:
+            update_shift_entry(line['id'], line['quantity'], self.request.user.id)
+
         shift_detail.save()
 
     @action(methods=['patch'], detail=True, permission_classes=[ShiftApprovePermission])

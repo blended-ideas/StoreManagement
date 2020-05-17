@@ -62,4 +62,6 @@ class ProductStockChange(TimeStampedModel):
     def save(self, *args, **kwargs):
         if self.changeType == 'SHIFT' and self.shift_entry is None:
             raise ValidationError('Missing Shift Entry')
+        if self.changeType == 'SHIFT_MODIFICATION' and self.shift_entry is None:
+            raise ValidationError('Missing Shift Entry')
         super(ProductStockChange, self).save(*args, **kwargs)

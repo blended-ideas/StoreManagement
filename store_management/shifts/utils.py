@@ -2,6 +2,7 @@ from django.db.models import F
 
 from .models import ShiftEntry
 from ..products.models import ProductStockChange
+from ..utils.common_utils import get_or_none
 
 
 def create_shift_entries_from_data(shift_detail, entries):
@@ -26,3 +27,27 @@ def create_shift_entries_from_data(shift_detail, entries):
             changeType='SHIFT',
             shift_entry=se
         )
+
+
+def update_shift_entry(entry_id, new_quantity, user_id):
+    shift_entry = get_or_none(ShiftEntry, id=entry_id)
+    if shift_entry is None:
+        return
+
+    quantity_change = shift_entry.quantity - new_quantity
+    shift_entry.quantity = new_quantity
+    shift_entry.save()
+
+    print(quantity_change)
+    if quantity_change != 0:
+        shift_entry.product.stock = F('stock') + quantity_change
+        shift_entry.product.save()
+
+        psc = ProductStockChange.objects.create(
+            user_id=user_id,
+            product=shift_entry.product,
+            value=-int(quantity_change),
+            changeType='SHIFT_MODIFICATION',
+            shift_entry=shift_entry
+        )
+        print(psc)

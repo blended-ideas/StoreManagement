@@ -18,6 +18,6 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(ProductStockChange)
 class ProductStockChangeAdmin(admin.ModelAdmin):
-    list_display = ('user', 'product', 'changeType', 'value')
+    list_display = ('user', 'product', 'changeType', 'value', 'created')
     list_filter = ('changeType',)
     readonly_fields = ('user', 'product', 'shift_entry')

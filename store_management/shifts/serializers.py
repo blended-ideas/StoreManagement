@@ -6,6 +6,7 @@ from .models import ShiftDetail, ShiftEntry
 
 class ShiftEntrySerializer(ModelSerializer):
     product_name = SlugRelatedField(required=False, read_only=True, slug_field='name', source='product')
+    product_available_stock = SlugRelatedField(required=False, read_only=True, slug_field='stock', source='product')
 
     class Meta:
         model = ShiftEntry
