@@ -8,9 +8,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from .models import Product, ProductStockChange
+from .models import Product, ProductStockChange, ProductExpiry
 from .permissions import ProductPermission
-from .serializers import ProductSerializer, ProductUpdateSerializer, ProductStockChangeSerializer
+from .serializers import ProductSerializer, ProductUpdateSerializer, ProductStockChangeSerializer, \
+    ProductExpirySerializer
 from ..utils.common_utils import StandardResultsSetPagination
 
 
@@ -93,6 +94,23 @@ class ProductStockChangeViewSet(GenericViewSet, ListModelMixin, RetrieveModelMix
     filter_backends = (SearchFilter, OrderingFilter)
     search_fields = ('product__name', 'product__category', 'product__barcode_entry')
     ordering = ['-created']
+
+    def get_queryset(self):
+        queryset = self.queryset
+        product = self.request.query_params.get('product', None)
+
+        if product is not None:
+            queryset = queryset.filter(product=product)
+        return queryset
+
+
+class ProductExpiryViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin):
+    serializer_class = ProductExpirySerializer
+    pagination_class = StandardResultsSetPagination
+    queryset = ProductExpiry.objects.all()
+    permission_classes = [IsAuthenticated]
+    filter_backends = (SearchFilter, OrderingFilter)
+    ordering = ['-datetime']
 
     def get_queryset(self):
         queryset = self.queryset

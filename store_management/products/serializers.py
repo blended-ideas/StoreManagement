@@ -2,7 +2,7 @@ from rest_framework.fields import IntegerField
 from rest_framework.relations import SlugRelatedField
 from rest_framework.serializers import ModelSerializer
 
-from .models import Product, ProductStockChange
+from .models import Product, ProductStockChange, ProductExpiry
 
 
 class ProductSerializer(ModelSerializer):
@@ -30,4 +30,12 @@ class ProductStockChangeSerializer(ModelSerializer):
 
     class Meta:
         model = ProductStockChange
+        fields = '__all__'
+
+
+class ProductExpirySerializer(ModelSerializer):
+    product_name = SlugRelatedField(required=False, read_only=True, slug_field='name', source='product')
+
+    class Meta:
+        model = ProductExpiry
         fields = '__all__'

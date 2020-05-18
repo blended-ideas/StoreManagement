@@ -34,6 +34,7 @@ class Product(UUIDModel):
 
 
 class ProductExpiry(TimeStampedModel):
+    user = ForeignKey(settings.AUTH_USER_MODEL, on_delete=CASCADE)
     product = ForeignKey(Product, on_delete=CASCADE)
     datetime = DateTimeField()
 
