@@ -50,4 +50,26 @@ def update_shift_entry(entry_id, new_quantity, user_id):
             changeType='SHIFT_MODIFICATION',
             shift_entry=shift_entry
         )
-        print(psc)
+
+
+def create_shift_entry(entry, shift_id, user_id):
+    se = ShiftEntry.objects.create(
+        shift_id=shift_id,
+        product_id=entry['product'],
+        quantity=entry['quantity'],
+    )
+    se.distributor_margin = se.product.distributor_margin
+    se.retailer_margin = se.product.retailer_margin
+    se.price = se.product.price
+    se.save()
+
+    se.product.stock = F('stock') - se.quantity
+    se.product.save()
+
+    ProductStockChange.objects.create(
+        user_id=user_id,
+        product_id=entry['product'],
+        value=-int(entry['quantity']),
+        changeType='SHIFT',
+        shift_entry=se
+    )
