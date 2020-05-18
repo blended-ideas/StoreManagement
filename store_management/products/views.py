@@ -1,11 +1,16 @@
 # Create your views here.
+from django.db.models import F
+from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.mixins import CreateModelMixin, UpdateModelMixin, ListModelMixin, RetrieveModelMixin
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from .models import Product, ProductStockChange
 from .permissions import ProductPermission
-from .serializers import ProductSerializer
+from .serializers import ProductSerializer, ProductUpdateSerializer, ProductStockChangeSerializer
 from ..utils.common_utils import StandardResultsSetPagination
 
 
@@ -18,6 +23,11 @@ class ProductViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin, ListMod
     search_fields = ('name', 'category', 'barcode_entry')
     ordering = ['name']
 
+    def get_serializer_class(self):
+        if self.request.method == 'PATCH':
+            return ProductUpdateSerializer
+        return ProductSerializer
+
     def get_queryset(self):
         return self.queryset
 
@@ -25,3 +35,69 @@ class ProductViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin, ListMod
         product = serializer.save()
         ProductStockChange.objects.create(user=self.request.user, product=product, value=product.stock,
                                           changeType='INITIAL_STOCK')
+
+    @action(methods=['POST'], detail=True)
+    def add_stock(self, request, pk=None):
+        change_value = request.data.get('changeValue', None)
+        if change_value is None:
+            return Response({'change_value': 'Missing Value to be Added'}, status=status.HTTP_400_BAD_REQUEST)
+        product = self.get_object()
+
+        product.stock = F('stock') + change_value
+        product.save()
+        psc = ProductStockChange.objects.create(
+            user=self.request.user,
+            product=product,
+            value=change_value,
+            changeType='ADDITION',
+        )
+
+        product.refresh_from_db()
+        return Response({
+            'psc': ProductStockChangeSerializer(psc).data,
+            'new_value': product.stock
+        }, status=status.HTTP_200_OK)
+
+    @action(methods=['POST'], detail=True)
+    def reduce_stock(self, request, pk=None):
+        change_value = request.data.get('changeValue', None)
+        if change_value is None:
+            return Response({'change_value': 'Missing Value to be Added'}, status=status.HTTP_400_BAD_REQUEST)
+        product = self.get_object()
+
+        if (product.stock - change_value) < 0:
+            return Response({'change_value': 'Reduction value cannot be less than available stock'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        product.stock = F('stock') - change_value
+        product.save()
+        psc = ProductStockChange.objects.create(
+            user=self.request.user,
+            product=product,
+            value=change_value,
+            changeType='DEDUCTION',
+        )
+
+        product.refresh_from_db()
+        return Response({
+            'psc': ProductStockChangeSerializer(psc).data,
+            'new_value': product.stock
+        }, status=status.HTTP_200_OK)
+
+
+class ProductStockChangeViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin):
+    serializer_class = ProductStockChangeSerializer
+    pagination_class = StandardResultsSetPagination
+    queryset = ProductStockChange.objects.all()
+    permission_classes = [IsAuthenticated]
+    filter_backends = (SearchFilter, OrderingFilter)
+    search_fields = ('product__name', 'product__category', 'product__barcode_entry')
+    ordering = ['-created']
+
+    def get_queryset(self):
+        queryset = self.queryset
+        product = self.request.query_params.get('product', None)
+
+        if product is not None:
+            queryset = queryset.filter(product=product)
+        return queryset

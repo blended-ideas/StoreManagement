@@ -6,3 +6,4 @@ class ProductPermission(IsAuthenticated):
         if request.method == 'POST' or request.method == 'PATCH':
             return request.user.roles.filter(label__in=['auditor', 'admin']).count() > 0
         return True
+

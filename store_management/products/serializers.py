@@ -11,14 +11,12 @@ class ProductSerializer(ModelSerializer):
         fields = '__all__'
 
 
-class ProductSerializerForMargin(ModelSerializer):
-    high_count = IntegerField(default=0, read_only=True, required=False)
-    high_margin = IntegerField(default=0, read_only=True, required=False)
+class ProductUpdateSerializer(ModelSerializer):
+    stock = IntegerField(required=False, read_only=True)
 
     class Meta:
         model = Product
-        fields = ('id', 'name', 'category', 'price', 'distributor_margin', 'retailer_margin',
-                  'high_count', 'high_margin')
+        fields = '__all__'
 
 
 class ProductMinimalSerializer(ModelSerializer):
@@ -28,7 +26,7 @@ class ProductMinimalSerializer(ModelSerializer):
 
 
 class ProductStockChangeSerializer(ModelSerializer):
-    product_minimal = ProductMinimalSerializer(required=False, read_only=True, source='product')
+    user_name = SlugRelatedField(required=False, read_only=True, slug_field='name', source='user')
 
     class Meta:
         model = ProductStockChange
