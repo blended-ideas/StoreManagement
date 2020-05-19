@@ -34,6 +34,7 @@ class ProductStockChangeSerializer(ModelSerializer):
 
 
 class ProductExpirySerializer(ModelSerializer):
+    user_name = SlugRelatedField(required=False, read_only=True, slug_field='name', source='user')
     product_name = SlugRelatedField(required=False, read_only=True, slug_field='name', source='product')
 
     class Meta:

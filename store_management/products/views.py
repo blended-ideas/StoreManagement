@@ -1,5 +1,7 @@
 # Create your views here.
+
 from django.db.models import F
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter, SearchFilter
@@ -9,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from .models import Product, ProductStockChange, ProductExpiry
-from .permissions import ProductPermission
+from .permissions import ProductPermission, ProductExpiryPermission
 from .serializers import ProductSerializer, ProductUpdateSerializer, ProductStockChangeSerializer, \
     ProductExpirySerializer
 from ..utils.common_utils import StandardResultsSetPagination
@@ -104,18 +106,21 @@ class ProductStockChangeViewSet(GenericViewSet, ListModelMixin, RetrieveModelMix
         return queryset
 
 
-class ProductExpiryViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin):
+class ProductExpiryViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, CreateModelMixin):
     serializer_class = ProductExpirySerializer
     pagination_class = StandardResultsSetPagination
     queryset = ProductExpiry.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [ProductExpiryPermission]
     filter_backends = (SearchFilter, OrderingFilter)
-    ordering = ['-datetime']
+    ordering = ['datetime']
 
     def get_queryset(self):
         queryset = self.queryset
         product = self.request.query_params.get('product', None)
+        after_today = self.request.query_params.get('after_today', None)
 
         if product is not None:
             queryset = queryset.filter(product=product)
+        if after_today is not None and after_today == 'true':
+            queryset = queryset.filter(datetime__gte=timezone.now())
         return queryset
