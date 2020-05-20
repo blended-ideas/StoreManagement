@@ -2,12 +2,15 @@ from datetime import timedelta
 
 import dateutil.parser
 # Create your views here.
+import pytz
 from django.db.models.aggregates import Sum
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, Trunc
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from store_management.report.serailizers import LastSevenDaySalesSerializer
 from store_management.shifts.models import ShiftDetail
 
 
@@ -50,3 +53,16 @@ class DailyMargin(APIView):
         }
 
         return Response(data=response_data, status=status.HTTP_200_OK)
+
+
+class LastSevenDaySales(APIView):
+    def get(self, request, format=None):
+        last_7day = timezone.now() - timedelta(days=7)
+        queryset = ShiftDetail.objects.filter(end_dt__gte=last_7day)
+
+        queryset = queryset.annotate(sale_date=Trunc('end_dt', tzinfo=pytz.timezone('Asia/Kolkata'), kind='day'))
+        queryset = queryset.values('sale_date')
+        queryset = queryset.annotate(Sum("price_total"), Sum("distributor_margin_total"), Sum("retailer_margin_total"))
+        queryset = queryset.order_by('sale_date')
+
+        return Response(LastSevenDaySalesSerializer(queryset, many=True).data, status=status.HTTP_200_OK)
