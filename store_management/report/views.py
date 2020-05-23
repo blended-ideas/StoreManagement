@@ -83,6 +83,7 @@ class ExpiryReportAPI(APIView):
         end_dt = today + timedelta(days=days)
         queryset = ProductExpiry.objects.filter(datetime__range=(today, end_dt))
         queryset = queryset.order_by('datetime') \
+            .select_related('product') \
             .annotate(diff_days=ExpressionWrapper(F('datetime') - today, output_field=DurationField()),
                       total_value=ExpressionWrapper(F('product__stock') * F('product__price'),
                                                     output_field=DecimalField()))
@@ -121,3 +122,8 @@ class ExpiryReportAPI(APIView):
                 pass
         return Response(data=ExpiryReportSerializer(report, context={'request': self.request}).data,
                         status=status.HTTP_201_CREATED)
+
+
+class MarginReportAPI(APIView):
+    def get(self, request, format=None):
+        date = request.data.get('date', None)
