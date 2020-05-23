@@ -25,3 +25,4 @@ djangorestframework-simplejwt==4.4.0  # https://github.com/SimpleJWT/django-rest
 
 # Others
 django-cleanup==4.0.0  # https://github.com/un1t/django-cleanup/
+XlsxWriter===1.2.8  # https://github.com/jmcnamara/XlsxWriter

@@ -1,17 +1,25 @@
+import os
 from datetime import timedelta
+from uuid import uuid4
 
 import dateutil.parser
 # Create your views here.
 import pytz
+import xlsxwriter
+from django.core.files import File
+from django.db.models import F, ExpressionWrapper
 from django.db.models.aggregates import Sum
+from django.db.models.fields import DurationField, DecimalField
 from django.db.models.functions import Coalesce, Trunc
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from store_management.report.serailizers import LastSevenDaySalesSerializer
+from store_management.products.models import ProductExpiry
 from store_management.shifts.models import ShiftDetail
+from .models import ExpiryReport
+from .serailizers import LastSevenDaySalesSerializer, ExpiryReportSerializer
 
 
 class DailyMargin(APIView):
@@ -66,3 +74,50 @@ class LastSevenDaySales(APIView):
         queryset = queryset.order_by('sale_date')
 
         return Response(LastSevenDaySalesSerializer(queryset, many=True).data, status=status.HTTP_200_OK)
+
+
+class ExpiryReportAPI(APIView):
+    def post(self, request, format=None):
+        days = request.data.get('days', 10)
+        today = timezone.now()
+        end_dt = today + timedelta(days=days)
+        queryset = ProductExpiry.objects.filter(datetime__range=(today, end_dt))
+        queryset = queryset.order_by('datetime') \
+            .annotate(diff_days=ExpressionWrapper(F('datetime') - today, output_field=DurationField()),
+                      total_value=ExpressionWrapper(F('product__stock') * F('product__price'),
+                                                    output_field=DecimalField()))
+
+        file_name = f'temp_files/{uuid4()}.xlsx'
+        workbook = xlsxwriter.Workbook(file_name)
+        worksheet = workbook.add_worksheet()
+
+        headers = ['Sl.no', 'Product', 'MRP', 'Quantity', 'Total MRP Value', 'Expiry Day', 'No of Days for Expiry']
+        row = 0
+        col = 0
+        for header in headers:
+            worksheet.write(row, col, header)
+            col = col + 1
+
+        values = queryset.values('product__name', 'product__price', 'product__stock', 'datetime', 'diff_days',
+                                 'total_value')
+        row = 1
+        col = 0
+        for entry in values:
+            worksheet.write(row, col, row)
+            worksheet.write(row, col + 1, entry['product__name'])
+            worksheet.write(row, col + 2, entry['product__price'])
+            worksheet.write(row, col + 3, entry['product__stock'])
+            worksheet.write(row, col + 4, entry['total_value'])
+            worksheet.write(row, col + 5, entry['datetime'].strftime('%d/%m/%y'))
+            worksheet.write(row, col + 6, entry['diff_days'].days)
+            row += 1
+        workbook.close()
+        with open(file_name, 'rb') as fi:
+            fl = File(fi, name=os.path.basename(fi.name))
+            report = ExpiryReport.objects.create(user=self.request.user, file=fl, no_of_days=days)
+            try:
+                os.remove(file_name)
+            except OSError:
+                pass
+        return Response(data=ExpiryReportSerializer(report, context={'request': self.request}).data,
+                        status=status.HTTP_201_CREATED)
