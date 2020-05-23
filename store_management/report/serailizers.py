@@ -1,6 +1,6 @@
 from rest_framework.serializers import Serializer, DateTimeField, DecimalField, ModelSerializer
 
-from .models import ExpiryReport
+from .models import ExpiryReport, SalesReport, MarginReport
 
 
 class LastSevenDaySalesSerializer(Serializer):
@@ -13,4 +13,16 @@ class LastSevenDaySalesSerializer(Serializer):
 class ExpiryReportSerializer(ModelSerializer):
     class Meta:
         model = ExpiryReport
+        fields = '__all__'
+
+
+class SalesReportSerializer(ModelSerializer):
+    class Meta:
+        model = SalesReport
+        fields = '__all__'
+
+
+class MarginReportSerializer(ModelSerializer):
+    class Meta:
+        model = MarginReport
         fields = '__all__'

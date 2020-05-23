@@ -18,8 +18,10 @@ from rest_framework.views import APIView
 
 from store_management.products.models import ProductExpiry
 from store_management.shifts.models import ShiftDetail
-from .models import ExpiryReport
-from .serailizers import LastSevenDaySalesSerializer, ExpiryReportSerializer
+from .models import ExpiryReport, SalesReport, MarginReport
+from .serailizers import LastSevenDaySalesSerializer, ExpiryReportSerializer, SalesReportSerializer, \
+    MarginReportSerializer
+from .utils import get_custom_report_queryset
 
 
 class DailyMargin(APIView):
@@ -88,6 +90,9 @@ class ExpiryReportAPI(APIView):
                       total_value=ExpressionWrapper(F('product__stock') * F('product__price'),
                                                     output_field=DecimalField()))
 
+        if not os.path.exists('temp_files'):
+            os.makedirs('temp_files')
+
         file_name = f'temp_files/{uuid4()}.xlsx'
         workbook = xlsxwriter.Workbook(file_name)
         worksheet = workbook.add_worksheet()
@@ -124,6 +129,103 @@ class ExpiryReportAPI(APIView):
                         status=status.HTTP_201_CREATED)
 
 
-class MarginReportAPI(APIView):
-    def get(self, request, format=None):
+class SalesReportAPI(APIView):
+    def post(self, request, format=None):
         date = request.data.get('date', None)
+        report_type = request.data.get('report_type', None)
+
+        if date is None:
+            return Response({'date': 'Missing/Invalid Date'}, status=status.HTTP_400_BAD_REQUEST)
+        if report_type not in ['DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY']:
+            return Response({'report_period': 'Missing/Invalid Report Period'}, status=status.HTTP_400_BAD_REQUEST)
+
+        queryset, start_dt, end_dt = get_custom_report_queryset(date, report_type)
+
+        if not os.path.exists('temp_files'):
+            os.makedirs('temp_files')
+
+        file_name = f'temp_files/{uuid4()}.xlsx'
+        workbook = xlsxwriter.Workbook(file_name)
+        worksheet = workbook.add_worksheet()
+
+        headers = ['Sl.no', 'Product', 'MRP', 'Quantity', 'Total MRP Value']
+        row = 0
+        col = 0
+        for header in headers:
+            worksheet.write(row, col, header)
+            col = col + 1
+
+        values = queryset.values('name', 'price', 'sold_quantity', 'total_mrp')
+        row = 1
+        col = 0
+        for entry in values:
+            worksheet.write(row, col, row)
+            worksheet.write(row, col + 1, entry['name'])
+            worksheet.write(row, col + 2, entry['price'])
+            worksheet.write(row, col + 3, entry['sold_quantity'])
+            worksheet.write(row, col + 4, entry['total_mrp'])
+            row += 1
+        workbook.close()
+        with open(file_name, 'rb') as fi:
+            fl = File(fi, name=os.path.basename(fi.name))
+            report = SalesReport.objects.create(user=self.request.user, file=fl, period=report_type,
+                                                start_dt=start_dt, end_dt=end_dt)
+            try:
+                os.remove(file_name)
+            except OSError:
+                pass
+
+        return Response(data=SalesReportSerializer(report, context={'request': self.request}).data,
+                        status=status.HTTP_201_CREATED)
+
+
+class MarginReportAPI(APIView):
+    def post(self, request, format=None):
+        date = request.data.get('date', None)
+        report_type = request.data.get('report_type', None)
+
+        if date is None:
+            return Response({'date': 'Missing/Invalid Date'}, status=status.HTTP_400_BAD_REQUEST)
+        if report_type not in ['DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY']:
+            return Response({'report_period': 'Missing/Invalid Report Period'}, status=status.HTTP_400_BAD_REQUEST)
+
+        queryset, start_dt, end_dt = get_custom_report_queryset(date, report_type)
+
+        if not os.path.exists('temp_files'):
+            os.makedirs('temp_files')
+
+        file_name = f'temp_files/{uuid4()}.xlsx'
+        workbook = xlsxwriter.Workbook(file_name)
+        worksheet = workbook.add_worksheet()
+
+        headers = ['Sl.no', 'Product', 'MRP', 'Quantity', 'Total MRP Value', 'Margin %', 'Margin Total']
+        row = 0
+        col = 0
+        for header in headers:
+            worksheet.write(row, col, header)
+            col = col + 1
+
+        values = queryset.values('name', 'price', 'sold_quantity', 'total_mrp', 'retailer_margin', 'margin_total')
+        row = 1
+        col = 0
+        for entry in values:
+            worksheet.write(row, col, row)
+            worksheet.write(row, col + 1, entry['name'])
+            worksheet.write(row, col + 2, entry['price'])
+            worksheet.write(row, col + 3, entry['sold_quantity'])
+            worksheet.write(row, col + 4, entry['total_mrp'])
+            worksheet.write(row, col + 5, entry['retailer_margin'])
+            worksheet.write(row, col + 6, entry['margin_total'])
+            row += 1
+        workbook.close()
+        with open(file_name, 'rb') as fi:
+            fl = File(fi, name=os.path.basename(fi.name))
+            report = MarginReport.objects.create(user=self.request.user, file=fl, period=report_type,
+                                                 start_dt=start_dt, end_dt=end_dt)
+            try:
+                os.remove(file_name)
+            except OSError:
+                pass
+
+        return Response(data=MarginReportSerializer(report, context={'request': self.request}).data,
+                        status=status.HTTP_201_CREATED)
