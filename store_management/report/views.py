@@ -205,6 +205,7 @@ class MarginReportAPI(APIView):
             worksheet.write(row, col, header)
             col = col + 1
 
+        print(queryset.values('name', 'margin_total'))
         values = queryset.values('name', 'price', 'sold_quantity', 'total_mrp', 'retailer_margin', 'margin_total')
         row = 1
         col = 0

@@ -1,4 +1,5 @@
 from datetime import timedelta
+from decimal import Decimal
 from uuid import uuid4
 
 import dateutil
@@ -46,7 +47,11 @@ def get_custom_report_queryset(date, report_type):
             Sum(F('shift_entries__quantity') * F('shift_entries__price'), output_field=DecimalField()), 0
         ),
         margin_total=Coalesce(
-            Sum(F('shift_entries__quantity') * F('shift_entries__retailer_margin'), output_field=DecimalField()), 0)
+            Sum(
+                (F('shift_entries__price') * F('shift_entries__quantity')) * F(
+                    'shift_entries__retailer_margin') / Decimal(100),
+                output_field=DecimalField()
+            ), 0)
     )
 
     queryset = queryset.filter(sold_quantity__gt=0)
