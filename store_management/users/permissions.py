@@ -6,3 +6,9 @@ class UserPermissions(IsAuthenticated):
         if request.method in SAFE_METHODS and request.user.id == obj.id:
             return True
         return request.user.roles.filter(label='admin').count() > 0
+
+
+class IsStoreAdminPermission(IsAuthenticated):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated) and \
+               request.user.roles.filter(label='admin').count() > 0

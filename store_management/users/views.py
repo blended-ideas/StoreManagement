@@ -6,8 +6,8 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from .models import UserRole
-from .permissions import UserPermissions
-from .serializers import UserSerializer, ChangePasswordSerializer, UserRoleSerializer
+from .permissions import UserPermissions, IsStoreAdminPermission
+from .serializers import UserSerializer, ChangePasswordSerializer, UserRoleSerializer, UpdateUserPasswordSerializer
 
 User = get_user_model()
 
@@ -18,8 +18,12 @@ class UserViewSet(GenericViewSet, RetrieveModelMixin, ListModelMixin, UpdateMode
     queryset = User.objects.all()
 
     def get_queryset(self, *args, **kwargs):
+        for_management = self.request.query_params.get('for_management', None)
         if self.request.user.roles.filter(label='admin').count() >= 1:
-            queryset = self.queryset.filter(roles__label__in=['auditor', 'shiftworker'])
+            if for_management is not None and for_management == 'true':
+                queryset = self.queryset.filter(roles__label__in=['auditor', 'shiftworker'])
+            else:
+                queryset = self.queryset.filter(roles__label__in=['auditor', 'shiftworker', 'admin'])
         else:
             queryset = self.queryset.filter(id=self.request.user.id)
         return queryset.distinct()
@@ -61,6 +65,18 @@ class UserViewSet(GenericViewSet, RetrieveModelMixin, ListModelMixin, UpdateMode
         if not user.check_password(old_password):
             return Response(data={'Old Password': 'Invalid Old Password'}, status=status.HTTP_400_BAD_REQUEST)
         user.set_password(new_password)
+        user.save()
+        return Response(data={'success': 'Password Changed'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['POST'], permission_classes=[IsStoreAdminPermission])
+    def update_user_password(self, request, *args, **kwargs):
+        serializer = UpdateUserPasswordSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        password = request.data.get('password', None)
+
+        user = self.get_object()
+        user.set_password(password)
         user.save()
         return Response(data={'success': 'Password Changed'}, status=status.HTTP_200_OK)
 

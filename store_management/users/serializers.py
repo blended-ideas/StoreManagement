@@ -29,3 +29,16 @@ class ChangePasswordSerializer(serializers.Serializer):
 
     class Meta:
         fields = ['new_password', 'old_password']
+
+
+class UpdateUserPasswordSerializer(serializers.Serializer):
+    def create(self, validated_data):
+        pass
+
+    def update(self, instance, validated_data):
+        pass
+
+    password = serializers.CharField(min_length=6)
+
+    class Meta:
+        fields = ['password']
