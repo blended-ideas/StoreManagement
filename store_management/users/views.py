@@ -2,11 +2,11 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.mixins import UpdateModelMixin, ListModelMixin, RetrieveModelMixin, CreateModelMixin
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from .models import UserRole
+from .permissions import UserPermissions
 from .serializers import UserSerializer, ChangePasswordSerializer, UserRoleSerializer
 
 User = get_user_model()
@@ -14,7 +14,7 @@ User = get_user_model()
 
 class UserViewSet(GenericViewSet, RetrieveModelMixin, ListModelMixin, UpdateModelMixin, CreateModelMixin):
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [UserPermissions]
     queryset = User.objects.all()
 
     def get_queryset(self, *args, **kwargs):
