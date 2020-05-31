@@ -69,7 +69,7 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 # https://docs.djangoproject.com/en/dev/ref/settings/#media-root
 MEDIA_ROOT = str(APPS_DIR / "media")
 # https://docs.djangoproject.com/en/dev/ref/settings/#media-url
-MEDIA_URL = "https://api.mahamane.com/media/"
+MEDIA_URL = "https://api.mahamane.in/media/"
 
 
 # TEMPLATES
