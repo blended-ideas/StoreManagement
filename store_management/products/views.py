@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from .models import Product, ProductStockChange, ProductExpiry
-from .permissions import ProductPermission, ProductExpiryPermission
+from .permissions import ProductPermission, ProductExpiryPermission, StockChangePermissions
 from .serializers import ProductSerializer, ProductUpdateSerializer, ProductStockChangeSerializer, \
     ProductExpirySerializer
 from ..utils.common_utils import StandardResultsSetPagination
@@ -39,7 +39,7 @@ class ProductViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin, ListMod
         ProductStockChange.objects.create(user=self.request.user, product=product, value=product.stock,
                                           changeType='INITIAL_STOCK')
 
-    @action(methods=['POST'], detail=True)
+    @action(methods=['POST'], detail=True, permission_classes=[StockChangePermissions])
     def add_stock(self, request, pk=None):
         change_value = request.data.get('changeValue', None)
         if change_value is None:
@@ -61,7 +61,7 @@ class ProductViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin, ListMod
             'new_value': product.stock
         }, status=status.HTTP_200_OK)
 
-    @action(methods=['POST'], detail=True)
+    @action(methods=['POST'], detail=True, permission_classes=[StockChangePermissions])
     def reduce_stock(self, request, pk=None):
         change_value = request.data.get('changeValue', None)
         if change_value is None:

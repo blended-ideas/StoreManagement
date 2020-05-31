@@ -17,3 +17,9 @@ class ProductExpiryPermission(IsAuthenticated):
         if request.method == 'DELETE':
             return False
         return request.user.roles.filter(label__in=['auditor', 'admin']).count() > 0
+
+
+class StockChangePermissions(IsAuthenticated):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated) and \
+               request.user.roles.filter(label__in=['auditor', 'admin']).count() > 0
