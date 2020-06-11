@@ -173,4 +173,4 @@ sentry_sdk.init(
 
 # Your stuff...
 # ------------------------------------------------------------------------------
-CORS_ORIGIN_WHITELIST = env.list("CORS_ORIGIN_WHITELIST", default=[])
+CORS_ORIGIN_ALLOW_ALL = True
