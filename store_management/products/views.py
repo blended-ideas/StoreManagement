@@ -87,6 +87,14 @@ class ProductViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin, ListMod
             'new_value': product.stock
         }, status=status.HTTP_200_OK)
 
+    @action(methods=['POST'], detail=True, permission_classes=[StockChangePermissions])
+    def modify_image(self, request):
+        product = self.get_object()
+        if 'file' in self.request.FILES:
+            product.image = self.request.FILES['file']
+        serializer = self.get_serializer(product)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+
 
 class ProductStockChangeViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin):
     serializer_class = ProductStockChangeSerializer
