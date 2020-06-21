@@ -9,7 +9,7 @@ from store_management.constants import PRODUCT_STATUS_CHANGE_CHOICES
 from store_management.products.utils import get_product_upload_path
 
 
-class Product(UUIDModel):
+class Product(UUIDModel, TimeStampedModel):
     created_by = ForeignKey(settings.AUTH_USER_MODEL, on_delete=PROTECT)
     name = CharField(max_length=250)
     category = CharField(max_length=500, blank=True, null=True)
