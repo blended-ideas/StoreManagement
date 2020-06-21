@@ -1,4 +1,5 @@
 # Create your views here.
+from datetime import timedelta
 
 from django.db.models import F
 from django.utils import timezone
@@ -129,9 +130,12 @@ class ProductExpiryViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, C
         queryset = self.queryset
         product = self.request.query_params.get('product', None)
         after_today = self.request.query_params.get('after_today', None)
+        home_display = self.request.query_params.get('home_display', None)
 
         if product is not None:
             queryset = queryset.filter(product=product)
         if after_today is not None and after_today == 'true':
             queryset = queryset.filter(datetime__gte=timezone.now())
+        if home_display is not None and home_display == 'true':
+            queryset = queryset.filter(datetime__lte=timezone.now() + timedelta(days=10))
         return queryset
