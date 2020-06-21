@@ -88,7 +88,7 @@ class ProductViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin, ListMod
         }, status=status.HTTP_200_OK)
 
     @action(methods=['POST'], detail=True, permission_classes=[StockChangePermissions])
-    def modify_image(self, request):
+    def modify_image(self, request, pk=None):
         product = self.get_object()
         if 'file' in self.request.FILES:
             product.image = self.request.FILES['file']
