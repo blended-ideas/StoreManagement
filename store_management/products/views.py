@@ -118,7 +118,7 @@ class ProductStockChangeViewSet(GenericViewSet, ListModelMixin, RetrieveModelMix
         return queryset
 
 
-class ProductExpiryViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, CreateModelMixin):
+class ProductExpiryViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, CreateModelMixin, UpdateModelMixin):
     serializer_class = ProductExpirySerializer
     pagination_class = StandardResultsSetPagination
     queryset = ProductExpiry.objects.all()
