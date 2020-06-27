@@ -81,9 +81,15 @@ class LastSevenDaySales(APIView):
 class ExpiryReportAPI(APIView):
     def post(self, request, format=None):
         days = request.data.get('days', 10)
+        all_days = request.data.get('download_all', False)
+
         today = timezone.now()
-        end_dt = today + timedelta(days=days)
-        queryset = ProductExpiry.objects.filter(datetime__range=(today, end_dt))
+        queryset = ProductExpiry.objects.filter(datetime__gte=today)
+
+        if not all_days:
+            end_dt = today + timedelta(days=days)
+            queryset = queryset.filter(datetime__lte=end_dt)
+
         queryset = queryset.order_by('datetime') \
             .select_related('product') \
             .annotate(diff_days=ExpressionWrapper(F('datetime') - today, output_field=DurationField()),
