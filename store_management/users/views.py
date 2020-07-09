@@ -15,7 +15,7 @@ User = get_user_model()
 class UserViewSet(GenericViewSet, RetrieveModelMixin, ListModelMixin, UpdateModelMixin, CreateModelMixin):
     serializer_class = UserSerializer
     permission_classes = [UserPermissions]
-    queryset = User.objects.all()
+    queryset = User.objects.filter(is_superuser=False)
 
     def get_queryset(self, *args, **kwargs):
         for_management = self.request.query_params.get('for_management', None)
