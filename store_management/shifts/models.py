@@ -2,11 +2,12 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.db.models import ForeignKey, PROTECT, DateTimeField, F, DecimalField, PositiveIntegerField, CASCADE, \
-    BooleanField
+    CharField
 from django.db.models.aggregates import Sum
 from model_utils.models import UUIDModel
 
 from store_management.products.models import Product
+from store_management.shifts.constants import SHIFT_STATUS_STATUS
 
 
 class ShiftDetail(UUIDModel):
@@ -18,7 +19,7 @@ class ShiftDetail(UUIDModel):
     distributor_margin_total = DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     retailer_margin_total = DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
-    approved = BooleanField(default=False)
+    status = CharField(max_length=50, default='NEW', choices=SHIFT_STATUS_STATUS)
     approved_by = ForeignKey(settings.AUTH_USER_MODEL, on_delete=PROTECT, blank=True, null=True,
                              related_name='approved_shifts')
 

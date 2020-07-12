@@ -11,7 +11,7 @@ class ShiftEntryInline(admin.TabularInline):
 
 @admin.register(ShiftDetail)
 class ShiftDetailAdmin(admin.ModelAdmin):
-    list_display = ('user', 'end_dt')
+    list_display = ('user', 'status', 'end_dt')
     readonly_fields = ('user', 'price_total', 'distributor_margin_total', 'retailer_margin_total')
     inlines = [
         ShiftEntryInline

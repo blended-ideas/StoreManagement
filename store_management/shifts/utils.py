@@ -17,17 +17,6 @@ def create_shift_entries_from_data(shift_detail, entries):
         se.price = se.product.price
         se.save()
 
-        se.product.stock = F('stock') - se.quantity
-        se.product.save()
-
-        ProductStockChange.objects.create(
-            user=shift_detail.user,
-            product_id=entry_data['product'],
-            value=-int(entry_data['quantity']),
-            changeType='SHIFT',
-            shift_entry=se
-        )
-
 
 def update_shift_entry(entry_id, new_quantity, user_id):
     shift_entry = get_or_none(ShiftEntry, id=entry_id)
