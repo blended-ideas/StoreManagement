@@ -39,6 +39,7 @@ def update_shift_entry(entry_id, new_quantity, user_id):
             changeType='SHIFT_MODIFICATION',
             shift_entry=shift_entry
         )
+    shift_entry.shift.save()
 
 
 def create_shift_entry(entry, shift_id, user_id):

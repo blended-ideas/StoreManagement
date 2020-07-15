@@ -10,15 +10,16 @@ from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveMode
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from .models import ShiftDetail
-from .permissions import ShiftDetailPermission, ShiftApprovePermission
-from .serializers import ShiftDetailSerializer
-from .utils import create_shift_entries_from_data, update_shift_entry, create_shift_entry
+from .models import ShiftDetail, ShiftEntry
+from .permissions import ShiftDetailPermission, ShiftApprovePermission, ShiftAddProductApprovePermission, \
+    ShiftEntryPermission
+from .serializers import ShiftDetailSerializer, ShiftEntrySerializer
+from .utils import create_shift_entries_from_data
 from ..products.models import ProductStockChange
-from ..utils.common_utils import StandardResultsSetPagination
+from ..utils.common_utils import StandardResultsSetPagination, get_or_none
 
 
-class ShiftDetailViewSet(GenericViewSet, CreateModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin):
+class ShiftDetailViewSet(GenericViewSet, CreateModelMixin, ListModelMixin, RetrieveModelMixin):
     serializer_class = ShiftDetailSerializer
     permission_classes = [ShiftDetailPermission]
     pagination_class = StandardResultsSetPagination
@@ -48,21 +49,6 @@ class ShiftDetailViewSet(GenericViewSet, CreateModelMixin, ListModelMixin, Retri
         entries = self.request.data.get('entries', [])
         shift_detail = serializer.save()
         create_shift_entries_from_data(shift_detail, entries)
-        shift_detail.save()
-
-    def perform_update(self, serializer):
-        shift_detail = serializer.save()
-        entries = self.request.data.get('entries', [])
-        lines_update = list(filter(lambda x: x['condition'] == 'EDIT', entries))
-        lines_create = list(filter(lambda x: x['condition'] == 'NEW', entries))
-
-        print('CREATE', lines_create)
-        for line in lines_update:
-            update_shift_entry(line['id'], line['quantity'], self.request.user.id)
-
-        for line in lines_create:
-            create_shift_entry(line, shift_detail.id, self.request.user.id)
-
         shift_detail.save()
 
     @action(methods=['patch'], detail=True)
@@ -96,3 +82,48 @@ class ShiftDetailViewSet(GenericViewSet, CreateModelMixin, ListModelMixin, Retri
                 shift_entry=se
             )
         return Response(self.get_serializer(shift).data, status=status.HTTP_200_OK)
+
+    @action(methods=['patch'], detail=True, permission_classes=[ShiftAddProductApprovePermission])
+    def add_products(self, request, pk=None):
+        shift = self.get_object()
+        entries = self.request.data.get('entries', [])
+        for entry in entries:
+            se = get_or_none(ShiftEntry, shift=shift, product_id=entry['product'])
+            if se is None:
+                se = ShiftEntry.objects.create(shift=shift, product_id=entry['product'], quantity=0)
+            se.quantity = F('quantity') + entry['quantity']
+            se.distributor_margin = se.product.distributor_margin
+            se.retailer_margin = se.product.retailer_margin
+            se.price = se.product.price
+            se.save()
+        shift.save()
+        return Response(self.get_serializer(shift).data, status=status.HTTP_200_OK)
+
+
+class ShiftEntryViewSet(GenericViewSet, UpdateModelMixin):
+    serializer_class = ShiftEntrySerializer
+    permission_classes = [ShiftEntryPermission]
+    pagination_class = StandardResultsSetPagination
+    filter_backends = (SearchFilter, OrderingFilter)
+    ordering = ['-id']
+    queryset = ShiftEntry.objects.all()
+
+    def perform_update(self, serializer):
+        old_quantity_value = self.get_object().quantity
+        se = serializer.save()
+
+        quantity_change = old_quantity_value - se.quantity
+        if se.shift.status == 'APPROVED':
+            se.product.stock = F('stock') + quantity_change
+            se.product.save()
+
+            ProductStockChange.objects.create(
+                user=self.request.user,
+                product=se.product,
+                value=-int(quantity_change),
+                changeType='SHIFT_MODIFICATION',
+                shift_entry=se
+            )
+        se.shift.save()
+        se.refresh_from_db()
+        return Response(self.get_serializer(se).data, status=status.HTTP_200_OK)
